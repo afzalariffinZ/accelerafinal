@@ -77,22 +77,56 @@ const RequestConfirmation = () => {
     };
   };
 
-  const handleConfirmSubmission = () => {
+  const handleConfirmSubmission = async () => {
     if (!requestData) return;
 
-    // Move from pending to submitted status
-    const confirmedRequest = {
-      ...requestData,
-      status: 'submitted',
-      confirmedDate: new Date().toISOString()
-    };
+    try {
+      // Generate AI summary for saving to database
+      const aiSummary = generateAIEnhancedSummary(requestData);
+      
+      // Update existing request with AI summary data
+      const response = await fetch('/api/requests/client', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          requestId: requestData.requestId, // Use the database request ID
+          aiSummary: {
+            executiveSummary: aiSummary.executiveSummary,
+            technicalAnalysis: aiSummary.technicalAnalysis,
+            implementationStrategy: aiSummary.implementationStrategy,
+            financialOptimization: aiSummary.financialOptimization,
+            riskAssessment: aiSummary.riskAssessment,
+            nextSteps: aiSummary.nextSteps
+          }
+        }),
+      });
 
-    // Store confirmed request for client hub
-    localStorage.setItem('submittedRequest', JSON.stringify(confirmedRequest));
-    localStorage.removeItem('pendingRequest');
+      const result = await response.json();
 
-    // Navigate to request detail page
-    router.push(`/requestdetail?id=${confirmedRequest.requestId}`);
+      if (result.success) {
+        // Move from pending to submitted status
+        const confirmedRequest = {
+          ...requestData,
+          status: 'submitted',
+          confirmedDate: new Date().toISOString()
+        };
+
+        // Store confirmed request for client hub
+        localStorage.setItem('submittedRequest', JSON.stringify(confirmedRequest));
+        localStorage.removeItem('pendingRequest');
+
+        // Navigate to request detail page
+        router.push(`/requestdetail?id=${confirmedRequest.requestId}`);
+      } else {
+        console.error('Failed to update request with AI summary:', result.message);
+        alert('Failed to submit request. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error submitting request:', error);
+      alert('An error occurred while submitting your request. Please try again.');
+    }
   };
 
   const handleEditRequest = () => {

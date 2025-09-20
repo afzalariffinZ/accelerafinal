@@ -17,10 +17,16 @@ CREATE TABLE client_requests (
     description TEXT NOT NULL,
     timeline VARCHAR(255),
     budget VARCHAR(255),
-    ai_enhanced_summary TEXT,
     status VARCHAR(50) DEFAULT 'pending',
     priority VARCHAR(50) DEFAULT 'medium',
     source VARCHAR(50) DEFAULT 'website',
+    -- AI Enhanced Summary fields
+    executive_summary TEXT,
+    technical_analysis TEXT,
+    implementation_strategy TEXT,
+    financial_optimization TEXT,
+    risk_assessment TEXT,
+    next_steps TEXT, -- JSON array stored as text
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -32,7 +38,7 @@ CREATE INDEX idx_client_requests_created_at ON client_requests(created_at);
 -- Insert sample data to test
 INSERT INTO client_requests (
     request_id, full_name, email, company, request_type, 
-    project_title, description, ai_enhanced_summary
+    project_title, description
 ) VALUES (
     'REQ-SAMPLE-001', 
     'John Doe', 
@@ -40,8 +46,7 @@ INSERT INTO client_requests (
     'Test Company',
     'feature',
     'Sample Feature Request',
-    'This is a sample request to test the database setup',
-    '🤖 Executive Summary: Sample AI-generated summary for testing purposes. 🔧 Technical Analysis: Basic implementation requirements identified. 📋 Implementation Strategy: Standard development approach recommended. 💰 Financial Optimization: Budget analysis pending. ⚡ Risk Assessment: Low risk profile. 🎯 Recommended Next Steps: Review and approval process.'
+    'This is a sample request to test the database setup'
 );
 
 -- Verify the table was created correctly

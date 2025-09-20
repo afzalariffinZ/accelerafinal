@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     // Generate unique request ID
     const requestId = 'REQ-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5)
     
-    // Save to Supabase
+    // Save to Supabase (basic request data only)
     const { data, error } = await supabase
       .from('client_requests')
       .insert([
@@ -31,10 +31,10 @@ export async function POST(request: NextRequest) {
           description: body.description,
           timeline: body.timeline || null,
           budget: body.budget || null,
-          ai_enhanced_summary: body.aiEnhancedSummary || null,
           status: 'pending',
           priority: 'medium',
           source: 'website'
+          // AI summary fields will be added later via PATCH
         }
       ])
       .select()
@@ -107,6 +107,66 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: false,
       message: 'Failed to fetch requests'
+    }, { status: 500 })
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json()
+    
+    // Basic validation
+    if (!body.requestId) {
+      return NextResponse.json({
+        success: false,
+        message: 'requestId is required'
+      }, { status: 400 })
+    }
+    
+    // Update existing request with AI summary
+    const { data, error } = await supabase
+      .from('client_requests')
+      .update({
+        executive_summary: body.aiSummary?.executiveSummary || null,
+        technical_analysis: body.aiSummary?.technicalAnalysis || null,
+        implementation_strategy: body.aiSummary?.implementationStrategy || null,
+        financial_optimization: body.aiSummary?.financialOptimization || null,
+        risk_assessment: body.aiSummary?.riskAssessment || null,
+        next_steps: body.aiSummary?.nextSteps ? JSON.stringify(body.aiSummary.nextSteps) : null,
+        status: 'submitted', // Update status when AI summary is added
+        updated_at: new Date().toISOString()
+      })
+      .eq('request_id', body.requestId)
+      .select()
+    
+    if (error) {
+      console.error('Supabase error:', error)
+      return NextResponse.json({
+        success: false,
+        message: 'Failed to update request with AI summary',
+        error: error.message
+      }, { status: 500 })
+    }
+    
+    if (!data || data.length === 0) {
+      return NextResponse.json({
+        success: false,
+        message: 'Request not found'
+      }, { status: 404 })
+    }
+    
+    return NextResponse.json({
+      success: true,
+      message: 'Request updated with AI summary successfully',
+      data: data[0]
+    }, { status: 200 })
+    
+  } catch (error) {
+    console.error('Error updating client request:', error)
+    return NextResponse.json({
+      success: false,
+      message: 'Failed to update request',
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
 }

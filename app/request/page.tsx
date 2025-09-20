@@ -80,40 +80,16 @@ const RequestPage = () => {
     e.preventDefault();
     
     try {
-      // Generate AI-Enhanced Summary
-      const aiSummary = `🤖 Executive Summary
-REQ-${Date.now()}: Enterprise-grade solution for ${formData.numberOfSeats} users with ${formData.priorityLevel} priority implementation targeting ${formData.expectedTimeline}. Our AI analysis indicates this project aligns with modern scalability requirements and estimated ${formData.paymentPreference} payment structure.
-
-🔧 Technical Analysis
-Based on your requirements for ${formData.numberOfSeats} licenses, our AI recommends a scalable architecture supporting ${formData.userTypes.admin} administrators, ${formData.userTypes.standard} standard users, and ${formData.userTypes.viewer} viewers. The proposed solution incorporates enterprise-grade security, role-based access controls, and seamless integration capabilities.
-
-📋 Implementation Strategy
-Priority ${formData.priorityLevel.toUpperCase()} classification ensures dedicated resource allocation. Target completion: ${formData.expectedTimeline}. Recommended approach: Agile methodology with bi-weekly sprints, continuous integration, and user acceptance testing phases.
-
-💰 Financial Optimization
-Revenue analysis (${formData.monthlyRevenue}) suggests ${formData.paymentPreference} payment schedule aligning with cash flow patterns. Preferred payment months (${formData.preferredPaymentMonths}) incorporated into financial planning.
-
-⚡ Risk Assessment
-${formData.priorityLevel === 'high' ? 'Low complexity risk profile' : 'Standard complexity risk profile'}. Standard implementation timeline. Budget constraints (${formData.budgetConstraints}) accommodate recommended solution scope.
-
-🎯 Recommended Next Steps
-• Technical architecture review (1-2 business days)
-• Resource allocation and team assignment
-• Detailed project timeline creation
-• Final cost estimation and contract preparation
-• Client approval and project kickoff`;
-
       // Prepare data for API
       const requestData = {
-        fullName: 'Enterprise Customer', // You can add a name field to the form
-        email: 'customer@example.com', // You can add email field to the form
-        company: 'Customer Company', // You can add company field to the form
-        requestType: 'enterprise-sales',
-        projectTitle: 'Enterprise Sales Request',
+        fullName: 'Enterprise Customer', // TODO: Add name field to the form
+        email: 'customer@example.com', // TODO: Add email field to the form  
+        company: 'Customer Company', // TODO: Add company field to the form
+        requestType: 'enterprise-solution',
+        projectTitle: `${formData.priorityLevel.toUpperCase()} Priority Enterprise Solution - ${formData.numberOfSeats} Seats`,
         description: formData.featureDescription,
         timeline: formData.expectedTimeline,
-        budget: formData.monthlyRevenue,
-        aiEnhancedSummary: aiSummary
+        budget: formData.monthlyRevenue || 'TBD',
       };
 
       // Save to database via API
@@ -132,10 +108,9 @@ ${formData.priorityLevel === 'high' ? 'Low complexity risk profile' : 'Standard 
         localStorage.setItem('pendingRequest', JSON.stringify({
           ...formData,
           submissionDate: new Date().toISOString(),
-          requestId: result.requestId,
-          status: 'submitted_successfully',
-          databaseId: result.data.id,
-          aiSummary: aiSummary
+          requestId: result.requestId, // This is the database request ID
+          status: 'pending',
+          databaseId: result.data.id
         }));
         
         // Navigate to confirmation page
