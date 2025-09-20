@@ -1,59 +1,62 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { z } from 'zod'
-
-// Validation schema for client request
-const clientRequestSchema = z.object({
-  fullName: z.string().min(1, 'Full name is required'),
-  email: z.string().email('Valid email is required'),
-  company: z.string().optional(),
-  phoneNumber: z.string().optional(),
-  requestType: z.string().min(1, 'Request type is required'),
-  projectTitle: z.string().min(1, 'Project title is required'),
-  description: z.string().min(10, 'Description must be at least 10 characters'),
-  timeline: z.string().optional(),
-  budget: z.string().optional(),
-  technicalRequirements: z.string().optional(),
-  businessGoals: z.string().optional(),
-  currentChallenges: z.string().optional(),
-  expectedOutcome: z.string().optional(),
-})
+import { supabase } from '@/lib/supabase'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
-    // Validate the request data
-    const validatedData = clientRequestSchema.parse(body)
+    // Basic validation
+    if (!body.fullName || !body.email || !body.requestType || !body.projectTitle || !body.description) {
+      return NextResponse.json({
+        success: false,
+        message: 'Required fields: fullName, email, requestType, projectTitle, description'
+      }, { status: 400 })
+    }
     
-    // Save to database
-    const clientRequest = await prisma.clientRequest.create({
-      data: {
-        ...validatedData,
-        source: 'website',
-        status: 'pending',
-        priority: 'medium',
-      }
-    })
+    // Generate unique request ID
+    const requestId = 'REQ-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5)
+    
+    // Save to Supabase
+    const { data, error } = await supabase
+      .from('client_requests')
+      .insert([
+        {
+          request_id: requestId,
+          full_name: body.fullName,
+          email: body.email,
+          company: body.company || null,
+          phone_number: body.phoneNumber || null,
+          request_type: body.requestType,
+          project_title: body.projectTitle,
+          description: body.description,
+          timeline: body.timeline || null,
+          budget: body.budget || null,
+          ai_enhanced_summary: body.aiEnhancedSummary || null,
+          status: 'pending',
+          priority: 'medium',
+          source: 'website'
+        }
+      ])
+      .select()
+    
+    if (error) {
+      console.error('Supabase error:', error)
+      return NextResponse.json({
+        success: false,
+        message: 'Failed to save request',
+        error: error.message
+      }, { status: 500 })
+    }
     
     return NextResponse.json({
       success: true,
       message: 'Request submitted successfully',
-      requestId: clientRequest.requestId,
-      data: clientRequest
+      requestId: requestId,
+      data: data[0]
     }, { status: 201 })
     
   } catch (error) {
     console.error('Error saving client request:', error)
-    
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({
-        success: false,
-        message: 'Validation error',
-        errors: error.errors
-      }, { status: 400 })
-    }
-    
     return NextResponse.json({
       success: false,
       message: 'Failed to submit request',
@@ -68,31 +71,34 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
     const status = searchParams.get('status')
-    const skip = (page - 1) * limit
     
-    const where = status ? { status } : {}
+    let query = supabase
+      .from('client_requests')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range((page - 1) * limit, page * limit - 1)
     
-    const [requests, total] = await Promise.all([
-      prisma.clientRequest.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          AIEnhancedRequestSummary: true
-        }
-      }),
-      prisma.clientRequest.count({ where })
-    ])
+    if (status) {
+      query = query.eq('status', status)
+    }
+    
+    const { data, error } = await query
+    
+    if (error) {
+      console.error('Supabase error:', error)
+      return NextResponse.json({
+        success: false,
+        message: 'Failed to fetch requests',
+        error: error.message
+      }, { status: 500 })
+    }
     
     return NextResponse.json({
       success: true,
-      data: requests,
+      data: data || [],
       pagination: {
         page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
+        limit
       }
     })
     

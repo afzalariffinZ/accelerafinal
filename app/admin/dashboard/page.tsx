@@ -18,6 +18,26 @@ interface Customer {
   totalUsers: number;
 }
 
+interface ClientRequest {
+  id: number;
+  request_id: string;
+  full_name: string;
+  email: string;
+  company?: string;
+  phone_number?: string;
+  request_type: string;
+  project_title: string;
+  description: string;
+  timeline?: string;
+  budget?: string;
+  ai_enhanced_summary?: string;
+  status: string;
+  priority: string;
+  source: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface CompanySettings {
   companyName: string;
   industry: string;
@@ -51,9 +71,12 @@ interface CompanySettings {
 const AdminDashboard = () => {
   const router = useRouter();
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [clientRequests, setClientRequests] = useState<ClientRequest[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<ClientRequest | null>(null);
   const [showCustomerModal, setShowCustomerModal] = useState(false);
+  const [showRequestModal, setShowRequestModal] = useState(false);
 
   useEffect(() => {
     // Load dummy customer data
@@ -139,7 +162,25 @@ const AdminDashboard = () => {
     ];
     
     setCustomers(dummyCustomers);
+    
+    // Fetch client requests from API
+    fetchClientRequests();
   }, []);
+
+  const fetchClientRequests = async () => {
+    try {
+      const response = await fetch('/api/requests/client');
+      const result = await response.json();
+      
+      if (result.success) {
+        setClientRequests(result.data);
+      } else {
+        console.error('Failed to fetch client requests:', result.message);
+      }
+    } catch (error) {
+      console.error('Error fetching client requests:', error);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -248,6 +289,16 @@ const AdminDashboard = () => {
               }`}
             >
               Customers
+            </button>
+            <button
+              onClick={() => setActiveTab('client-requests')}
+              className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'client-requests'
+                  ? 'border-blue-500 text-blue-600 bg-blue-50'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Client Requests
             </button>
             <button
               onClick={() => setActiveTab('analytics')}
