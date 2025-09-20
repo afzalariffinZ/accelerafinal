@@ -76,20 +76,56 @@ const RequestPage = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
     
-    // Store form data in localStorage for the confirmation page
-    localStorage.setItem('pendingRequest', JSON.stringify({
-      ...formData,
-      submissionDate: new Date().toISOString(),
-      requestId: 'REQ-' + Date.now(),
-      status: 'pending_confirmation'
-    }));
-    
-    // Navigate to confirmation page
-    router.push('/requestconfirmation');
+    try {
+      // Prepare data for API
+      const requestData = {
+        fullName: 'Enterprise Customer', // You can add a name field to the form
+        email: 'customer@example.com', // You can add email field to the form
+        company: 'Customer Company', // You can add company field to the form
+        requestType: 'enterprise-sales',
+        projectTitle: 'Enterprise Sales Request',
+        description: formData.featureDescription,
+        timeline: formData.expectedTimeline,
+        budget: formData.monthlyRevenue,
+        technicalRequirements: `Seats: ${formData.numberOfSeats}, Admin: ${formData.userTypes.admin}, Standard: ${formData.userTypes.standard}, Viewer: ${formData.userTypes.viewer}`,
+        businessGoals: formData.businessJustification,
+        currentChallenges: formData.budgetConstraints,
+        expectedOutcome: `Priority: ${formData.priorityLevel}, Payment: ${formData.paymentPreference}`,
+      };
+
+      // Save to database via API
+      const response = await fetch('/api/requests/client', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Store both form data and database response for confirmation page
+        localStorage.setItem('pendingRequest', JSON.stringify({
+          ...formData,
+          submissionDate: new Date().toISOString(),
+          requestId: result.requestId,
+          status: 'pending_confirmation',
+          databaseId: result.data.id
+        }));
+        
+        // Navigate to confirmation page
+        router.push('/requestconfirmation');
+      } else {
+        throw new Error(result.message || 'Failed to submit request');
+      }
+    } catch (error) {
+      console.error('Error submitting request:', error);
+      alert('Failed to submit request. Please try again.');
+    }
   };
 
   return (

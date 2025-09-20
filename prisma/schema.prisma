@@ -43,6 +43,9 @@ model ClientRequest {
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
   
+  // Relations
+  aiEnhancedSummary    AIEnhancedRequestSummary?
+  
   @@map("client_requests")
 }
 
@@ -89,6 +92,9 @@ model EnterpriseSalesRequest {
   // Timestamps
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+  
+  // Relations
+  aiEnhancedSummary   AIEnhancedRequestSummary?
   
   @@map("enterprise_sales_requests")
 }
