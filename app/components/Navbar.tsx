@@ -45,7 +45,7 @@ const Navbar = () => {
             </div>
             <div className="hidden sm:block">
               <p className="text-sm font-medium text-gray-900">John Doe</p>
-              <p className="text-xs text-gray-500">Admin</p>
+              <p className="text-xs text-gray-500">User</p>
             </div>
           </div>
 

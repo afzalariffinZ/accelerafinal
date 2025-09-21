@@ -171,7 +171,7 @@ const RequestDetailContent = () => {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              Approval
+              Status
             </button>
             <button
               onClick={() => setActiveTab('invoices')}
