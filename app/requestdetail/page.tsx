@@ -26,54 +26,139 @@ interface SubmittedRequest {
   status: string;
 }
 
-const WorkflowProgress = () => {
+const WorkflowProgress = ({ requestStatus }: { requestStatus: string }) => {
+  // Determine step statuses based on request status
+  const getStepStatus = (stepId: number) => {
+    switch (requestStatus.toLowerCase()) {
+      case 'pending':
+      case 'submitted':
+        return stepId === 1 ? 'completed' : stepId === 2 ? 'current' : 'pending';
+      case 'accepted':
+        return stepId <= 3 ? 'completed' : stepId === 4 ? 'current' : 'pending';
+      case 'client approved':
+        return stepId <= 4 ? 'completed' : stepId === 5 ? 'current' : 'pending';
+      case 'implementation':
+        return stepId <= 4 ? 'completed' : stepId === 5 ? 'current' : 'pending';
+      case 'rejected':
+        return stepId === 1 ? 'completed' : stepId === 2 ? 'completed' : stepId === 3 ? 'rejected' : 'pending';
+      default:
+        return stepId === 1 ? 'completed' : stepId === 2 ? 'current' : 'pending';
+    }
+  };
+
   const steps = [
-    { id: 1, title: 'Request Submitted', status: 'completed' },
-    { id: 2, title: 'AI Analysis', status: 'current' },
-    { id: 3, title: 'Finance Review', status: 'pending' },
-    { id: 4, title: 'Client Approval', status: 'pending' },
-    { id: 5, title: 'Implementation', status: 'pending' },
+    { 
+      id: 1, 
+      title: 'Request Submitted', 
+      description: 'Your request has been successfully submitted and entered our system.',
+      status: getStepStatus(1) 
+    },
+    { 
+      id: 2, 
+      title: 'AI Analysis', 
+      description: 'AI evaluation completed successfully with positive feasibility assessment.',
+      status: getStepStatus(2) 
+    },
+    { 
+      id: 3, 
+      title: 'Finance Review', 
+      description: 'Financial analysis completed and pricing approved by finance team.',
+      status: getStepStatus(3) 
+    },
+    { 
+      id: 4, 
+      title: 'Client Approval', 
+      description: 'Waiting for your final approval to proceed with implementation.',
+      status: getStepStatus(4) 
+    },
+    { 
+      id: 5, 
+      title: 'Implementation', 
+      description: 'Activation of your requested request.',
+      status: getStepStatus(5) 
+    },
   ];
 
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm border">
-      <h3 className="text-lg font-semibold text-gray-900 mb-6">Workflow Progress</h3>
-      <div className="relative">
-        <div className="flex justify-between items-center">
-          {steps.map((step, index) => (
-            <div key={step.id} className="relative flex flex-col items-center z-10">
-              <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium border-2 transition-all duration-300 ${
-                  step.status === 'completed'
-                    ? 'bg-green-500 text-white border-green-500'
-                    : step.status === 'current'
-                    ? 'bg-blue-500 text-white border-blue-500'
-                    : 'bg-white text-gray-500 border-gray-300'
-                }`}
-              >
-                {step.status === 'completed' ? (
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                ) : (
-                  step.id
-                )}
-              </div>
-              <div className="mt-3 text-center max-w-24">
-                <p
-                  className={`text-xs font-medium leading-tight ${
-                    step.status === 'completed' || step.status === 'current'
-                      ? 'text-gray-900'
-                      : 'text-gray-500'
-                  }`}
-                >
-                  {step.title}
-                </p>
-              </div>
+      <h3 className="text-lg font-semibold text-gray-900 mb-6">Process Status</h3>
+      <div className="space-y-3">
+        {steps.map((step, index) => (
+          <div
+            key={step.id}
+            className={`flex items-start space-x-3 p-3 rounded-lg border ${
+              step.status === 'completed'
+                ? 'bg-green-50 border-green-200'
+                : step.status === 'current'
+                ? 'bg-blue-50 border-blue-200'
+                : step.status === 'rejected'
+                ? 'bg-red-50 border-red-200'
+                : 'bg-gray-50 border-gray-200'
+            }`}
+          >
+            <div
+              className={`w-5 h-5 rounded-full flex items-center justify-center mt-0.5 ${
+                step.status === 'completed'
+                  ? 'bg-green-500'
+                  : step.status === 'current'
+                  ? 'bg-blue-500'
+                  : step.status === 'rejected'
+                  ? 'bg-red-500'
+                  : 'bg-gray-300'
+              }`}
+            >
+              {step.status === 'completed' ? (
+                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              ) : step.status === 'rejected' ? (
+                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              ) : step.status === 'current' ? (
+                <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+              ) : null}
             </div>
-          ))}
-        </div>
-        <div className="pointer-events-none absolute top-5 left-5 right-5 h-0.5 bg-gray-300 z-0"></div>
+            <div>
+              <h5 className={`font-medium ${
+                step.status === 'completed'
+                  ? 'text-green-900'
+                  : step.status === 'current'
+                  ? 'text-blue-900'
+                  : step.status === 'rejected'
+                  ? 'text-red-900'
+                  : 'text-gray-600'
+              }`}>
+                {step.title}
+              </h5>
+              <p className={`text-sm ${
+                step.status === 'completed'
+                  ? 'text-green-700'
+                  : step.status === 'current'
+                  ? 'text-blue-700'
+                  : step.status === 'rejected'
+                  ? 'text-red-700'
+                  : 'text-gray-500'
+              }`}>
+                {step.description}
+              </p>
+              <p className={`text-xs mt-1 ${
+                step.status === 'completed'
+                  ? 'text-green-600'
+                  : step.status === 'current'
+                  ? 'text-blue-600'
+                  : step.status === 'rejected'
+                  ? 'text-red-600'
+                  : 'text-gray-500'
+              }`}>
+                {step.status === 'completed' ? '✓ Completed' :
+                 step.status === 'current' ? '🔄 In Progress' :
+                 step.status === 'rejected' ? '❌ Rejected' :
+                 '⏳ Pending'}
+              </p>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -89,21 +174,52 @@ const RequestDetailContent = () => {
   const requestId = searchParams.get('id');
 
   useEffect(() => {
-    // Load submitted request data from localStorage
-    const storedRequest = localStorage.getItem('submittedRequest');
-    if (storedRequest) {
-      const request = JSON.parse(storedRequest);
-      // If specific ID is requested, check if it matches
-      if (!requestId || request.requestId === requestId) {
-        setRequestData(request);
+    const loadRequestData = async () => {
+      // Load submitted request data from localStorage
+      const storedRequest = localStorage.getItem('submittedRequest');
+      if (storedRequest) {
+        const request = JSON.parse(storedRequest);
+        // If specific ID is requested, check if it matches
+        if (!requestId || request.requestId === requestId) {
+          setRequestData(request);
+          
+          // Try to fetch updated status from API
+          if (request.requestId) {
+            try {
+              const response = await fetch(`/api/requests/client?requestId=${request.requestId}`);
+              const result = await response.json();
+              
+              if (result.success && result.data.length > 0) {
+                const apiRequest = result.data[0];
+                // Update request data with API status
+                const updatedRequest = {
+                  ...request,
+                  status: apiRequest.status || request.status
+                };
+                setRequestData(updatedRequest);
+                
+                // Set isApproved state based on status
+                if (updatedRequest.status?.toLowerCase() === 'client approved' || 
+                    updatedRequest.status?.toLowerCase() === 'implementation') {
+                  setIsApproved(true);
+                }
+              }
+            } catch (error) {
+              console.error('Error fetching updated status:', error);
+              // Continue with localStorage data if API fails
+            }
+          }
+        } else {
+          // Could fetch specific request by ID from API here
+          setRequestData(request);
+        }
       } else {
-        // Could fetch specific request by ID from API here
-        setRequestData(request);
+        // If no request data, redirect to clienthub
+        router.push('/clienthub');
       }
-    } else {
-      // If no request data, redirect to clienthub
-      router.push('/clienthub');
-    }
+    };
+
+    loadRequestData();
   }, [requestId, router]);
 
   const formatDate = (dateString: string) => {
@@ -164,16 +280,6 @@ const RequestDetailContent = () => {
               Request Overview
             </button>
             <button
-              onClick={() => setActiveTab('status')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'status'
-                  ? 'border-purple-500 text-purple-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Status
-            </button>
-            <button
               onClick={() => setActiveTab('approval')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'approval'
@@ -200,7 +306,7 @@ const RequestDetailContent = () => {
         {activeTab === 'overview' && (
           <div className="space-y-8">
             {/* Workflow Progress */}
-            <WorkflowProgress />
+            <WorkflowProgress requestStatus={requestData.status} />
 
             {/* Request Details */}
             <div className="bg-white rounded-lg p-6 shadow-sm border">
@@ -287,128 +393,15 @@ const RequestDetailContent = () => {
           </div>
         )}
 
-        {activeTab === 'status' && (
-          <div className="bg-white rounded-lg p-6 shadow-sm border">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Request Status</h3>
-            
-            <div className="space-y-6">
-              {/* Current Status */}
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="flex items-center">
-                  <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                  <div>
-                    <h4 className="font-medium text-green-900">Finance Review Completed - Awaiting Your Approval</h4>
-                    <p className="text-sm text-green-700 mt-1">
-                      Your request has been reviewed and approved by our finance team. Please review the details below and provide your final approval.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Approval Steps */}
-              <div className="space-y-4">
-                <h4 className="font-medium text-gray-900">Process Status</h4>
-                
-                <div className="space-y-3">
-                  <div className="flex items-start space-x-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center mt-0.5">
-                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h5 className="font-medium text-green-900">Request Submitted</h5>
-                      <p className="text-sm text-green-700">Your request has been successfully submitted and entered our system.</p>
-                      <p className="text-xs text-green-600 mt-1">✓ Completed</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center mt-0.5">
-                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h5 className="font-medium text-green-900">AI Analysis</h5>
-                      <p className="text-sm text-green-700">AI evaluation completed successfully with positive feasibility assessment.</p>
-                      <p className="text-xs text-green-600 mt-1">✓ Completed</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center mt-0.5">
-                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h5 className="font-medium text-green-900">Finance Review</h5>
-                      <p className="text-sm text-green-700">Financial analysis completed and pricing approved by finance team.</p>
-                      <p className="text-xs text-green-600 mt-1">✓ Completed</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center mt-0.5">
-                      <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                    </div>
-                    <div>
-                      <h5 className="font-medium text-blue-900">Client Approval</h5>
-                      <p className="text-sm text-blue-700">Waiting for your final approval to proceed with implementation.</p>
-                      <p className="text-xs text-blue-600 mt-1">🔄 Awaiting Your Decision</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                    <div className="w-5 h-5 bg-gray-300 rounded-full mt-0.5"></div>
-                    <div>
-                      <h5 className="font-medium text-gray-600">Activation</h5>
-                      <p className="text-sm text-gray-500">Activation of your requested request.</p>
-                      <p className="text-xs text-gray-500 mt-1">⏳ Pending</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Estimated Timeline */}
-              <div className="border-t border-gray-200 pt-6">
-                <h4 className="font-medium text-gray-900 mb-3">Estimated Timeline</h4>
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <div className="flex items-center">
-                    <svg className="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-sm text-yellow-800">
-                      <strong>Expected completion:</strong> {requestData.expectedTimeline} from approval
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Contact Information */}
-              <div className="border-t border-gray-200 pt-6">
-                <h4 className="font-medium text-gray-900 mb-3">Need Help?</h4>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600 mb-2">
-                    If you have questions about the status or need to modify your request:
-                  </p>
-                  <div className="text-sm text-gray-700">
-                    <p>📧 Email: support@accelereal.com</p>
-                    <p>📞 Phone: +60 12-345-6789</p>
-                    <p>💬 Live Chat: Available 9 AM - 6 PM MYT</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {activeTab === 'approval' && (
           <div className="bg-white rounded-lg p-6 shadow-sm border">
             <h3 className="text-lg font-semibold text-gray-900 mb-6">Approval Details</h3>
             
-            <div className="space-y-6">
+            {/* Check if approval content should be available */}
+            {(requestData.status?.toLowerCase() === 'accepted' || 
+              requestData.status?.toLowerCase() === 'client approved' || 
+              requestData.status?.toLowerCase() === 'implementation') ? (
+              <div className="space-y-6">
                 {/* Client Information */}
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <h5 className="font-semibold text-gray-900 mb-4">Client Information</h5>
@@ -523,9 +516,36 @@ const RequestDetailContent = () => {
                       
                       <div className="flex space-x-4">
                         <button
-                          onClick={() => {
-                            setIsApproved(true);
-                            setActiveTab('invoices');
+                          onClick={async () => {
+                            try {
+                              // Update status to "client approved" in the database
+                              const response = await fetch('/api/requests/client', {
+                                method: 'PATCH',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                  requestId: requestData.requestId,
+                                  status: 'client approved'
+                                }),
+                              });
+
+                              if (response.ok) {
+                                // Update local state
+                                setIsApproved(true);
+                                setRequestData({
+                                  ...requestData,
+                                  status: 'client approved'
+                                });
+                                // Redirect to invoices tab
+                                setActiveTab('invoices');
+                              } else {
+                                alert('Error updating request status. Please try again.');
+                              }
+                            } catch (error) {
+                              console.error('Error approving request:', error);
+                              alert('Error approving request. Please try again.');
+                            }
                           }}
                           className="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                         >
@@ -569,7 +589,32 @@ const RequestDetailContent = () => {
                   )}
                 </div>
               </div>
-            </div>
+            ) : (
+              // Show "not available yet" message for pending/submitted requests
+              <div className="text-center py-16">
+                <div className="w-20 h-20 mx-auto mb-6 bg-yellow-100 rounded-full flex items-center justify-center">
+                  <svg className="w-10 h-10 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-medium text-gray-900 mb-3">Approval Pending</h3>
+                <p className="text-gray-600 mb-4">
+                  Your request is currently being reviewed by our AI analysis and finance team.
+                </p>
+                <p className="text-sm text-gray-500 mb-6">
+                  Current Status: <span className="font-medium text-gray-700">{requestData.status}</span>
+                </p>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left max-w-md mx-auto">
+                  <h6 className="font-medium text-blue-900 mb-2">What's happening:</h6>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    <li>• AI analysis is evaluating feasibility</li>
+                    <li>• Finance team is reviewing pricing</li>
+                    <li>• Approval details will appear here once ready</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {activeTab === 'invoices' && (
