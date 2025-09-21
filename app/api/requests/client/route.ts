@@ -191,7 +191,6 @@ export async function PATCH(request: NextRequest) {
                 financial_optimization: body.aiSummary?.financialOptimization || null,
                 risk_assessment: body.aiSummary?.riskAssessment || null,
                 next_steps: body.aiSummary?.nextSteps ? JSON.stringify(body.aiSummary.nextSteps) : null,
-                status: 'submitted', // Update status when AI summary is added
                 updated_at: new Date().toISOString()
             })
             .eq('request_id', body.requestId)
