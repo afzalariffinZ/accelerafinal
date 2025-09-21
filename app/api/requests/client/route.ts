@@ -71,6 +71,29 @@ export async function GET(request: NextRequest) {
         const page = parseInt(searchParams.get('page') || '1')
         const limit = parseInt(searchParams.get('limit') || '10')
         const status = searchParams.get('status')
+        const requestId = searchParams.get('requestId')
+
+        // If requestId is provided, fetch specific request
+        if (requestId) {
+            const { data, error } = await supabase
+                .from('client_requests')
+                .select('*')
+                .eq('request_id', requestId)
+
+            if (error) {
+                console.error('Supabase error:', error)
+                return NextResponse.json({
+                    success: false,
+                    message: 'Failed to fetch request',
+                    error: error.message
+                }, { status: 500 })
+            }
+
+            return NextResponse.json({
+                success: true,
+                data: data || []
+            })
+        }
 
         let query = supabase
             .from('client_requests')
@@ -121,6 +144,41 @@ export async function PATCH(request: NextRequest) {
                 success: false,
                 message: 'requestId is required'
             }, { status: 400 })
+        }
+
+        // Check if this is a status-only update
+        if (body.status && !body.aiSummary) {
+            // Status update only
+            const { data, error } = await supabase
+                .from('client_requests')
+                .update({
+                    status: body.status,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('request_id', body.requestId)
+                .select()
+
+            if (error) {
+                console.error('Supabase error:', error)
+                return NextResponse.json({
+                    success: false,
+                    message: 'Failed to update request status',
+                    error: error.message
+                }, { status: 500 })
+            }
+
+            if (!data || data.length === 0) {
+                return NextResponse.json({
+                    success: false,
+                    message: 'Request not found'
+                }, { status: 404 })
+            }
+
+            return NextResponse.json({
+                success: true,
+                message: 'Request status updated successfully',
+                data: data[0]
+            }, { status: 200 })
         }
 
         // Update existing request with AI summary

@@ -23,19 +23,45 @@ interface ClientRequest {
   request_id: string;
   full_name: string;
   email: string;
-  company?: string;
-  phone_number?: string;
+  company: string;
   request_type: string;
   project_title: string;
   description: string;
-  timeline?: string;
-  budget?: string;
-  ai_enhanced_summary?: string;
-  status: string;
+  timeline: string;
+  budget: string;
+  status: 'pending' | 'accepted' | 'rejected';
   priority: string;
-  source: string;
   created_at: string;
-  updated_at: string;
+  executive_summary?: string;
+  technical_analysis?: string;
+  implementation_strategy?: string;
+  financial_optimization?: string;
+  risk_assessment?: string;
+  next_steps?: string;
+}
+
+interface ReportData {
+  statusCode: number;
+  body: {
+    status: string;
+    report_data: {
+      inputs: {
+        current_payment_MYR: number;
+        current_frequency: string;
+        new_frequency: string;
+        remaining_years: number;
+      };
+      calculation_results: {
+        original_present_value_MYR: number;
+        new_equivalent_payment_MYR: number;
+      };
+      economic_assumptions: {
+        inflation_rate: number;
+        risk_free_rate: number;
+      };
+    };
+    s3_location: string;
+  };
 }
 
 interface CompanySettings {
@@ -60,12 +86,6 @@ interface CompanySettings {
     installmentOptions: number[];
     earlyPaymentDiscount: number;
   };
-  aiWorkflowConfig: {
-    autoApprovalThreshold: number;
-    feasibilityScoreMinimum: number;
-    maxIterations: number;
-    requireCashflowAnalysis: boolean;
-  };
 }
 
 const AdminDashboard = () => {
@@ -74,9 +94,7 @@ const AdminDashboard = () => {
   const [clientRequests, setClientRequests] = useState<ClientRequest[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [selectedRequest, setSelectedRequest] = useState<ClientRequest | null>(null);
   const [showCustomerModal, setShowCustomerModal] = useState(false);
-  const [showRequestModal, setShowRequestModal] = useState(false);
 
   useEffect(() => {
     // Load dummy customer data
@@ -174,12 +192,16 @@ const AdminDashboard = () => {
       
       if (result.success) {
         setClientRequests(result.data);
-      } else {
-        console.error('Failed to fetch client requests:', result.message);
       }
     } catch (error) {
       console.error('Error fetching client requests:', error);
     }
+  };
+
+  const handleViewReport = (request: ClientRequest) => {
+    // Open report in new tab
+    const reportUrl = `/admin/report?requestId=${request.request_id}`;
+    window.open(reportUrl, '_blank');
   };
 
   const getStatusColor = (status: string) => {
@@ -188,6 +210,10 @@ const AdminDashboard = () => {
         return 'bg-green-100 text-green-800';
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
+      case 'accepted':
+        return 'bg-green-100 text-green-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
       case 'overdue':
         return 'bg-red-100 text-red-800';
       case 'inactive':
@@ -203,6 +229,10 @@ const AdminDashboard = () => {
         return 'Active';
       case 'pending':
         return 'Pending';
+      case 'accepted':
+        return 'Accepted';
+      case 'rejected':
+        return 'Rejected';
       case 'overdue':
         return 'Overdue';
       case 'inactive':
@@ -291,9 +321,9 @@ const AdminDashboard = () => {
               Customers
             </button>
             <button
-              onClick={() => setActiveTab('client-requests')}
+              onClick={() => setActiveTab('requests')}
               className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'client-requests'
+                activeTab === 'requests'
                   ? 'border-blue-500 text-blue-600 bg-blue-50'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
@@ -414,6 +444,98 @@ const AdminDashboard = () => {
               </div>
             )}
 
+            {activeTab === 'requests' && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900">Client Requests</h2>
+                  <div className="flex items-center space-x-4">
+                    <button
+                      onClick={fetchClientRequests}
+                      className="text-gray-500 hover:text-gray-700 transition-colors flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Refresh
+                    </button>
+                  </div>
+                </div>
+
+                {/* Client Requests Table */}
+                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request ID</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project Title</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Budget</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {clientRequests.map((request) => (
+                          <tr key={request.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {request.request_id}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">{request.full_name}</div>
+                                <div className="text-sm text-gray-500">{request.email}</div>
+                                {request.company && (
+                                  <div className="text-sm text-gray-500">{request.company}</div>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{request.project_title}</div>
+                              <div className="text-sm text-gray-500 truncate max-w-xs">{request.description}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(request.status)}`}>
+                                {request.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {request.budget || 'TBD'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {new Date(request.created_at).toLocaleDateString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <button
+                                onClick={() => handleViewReport(request)}
+                                className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                View Report
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {clientRequests.length === 0 && (
+                    <div className="text-center py-12">
+                      <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No client requests</h3>
+                      <p className="text-gray-500">Client requests will appear here once submitted.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {activeTab === 'overview' && (
               <div className="text-center py-16">
                 <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
@@ -452,6 +574,25 @@ const AdminDashboard = () => {
         </div>
       </div>
 
+      {/* Company Settings Form */}
+      <CompanySettingsForm />
+
+      {/* Customer Modal */}
+      {showCustomerModal && selectedCustomer && (
+        <CustomerDetailModal 
+          customer={selectedCustomer} 
+          onClose={() => {
+            setShowCustomerModal(false);
+            setSelectedCustomer(null);
+          }}
+          onUpdate={(updatedCustomer) => {
+            setCustomers(customers.map(c => 
+              c.customerId === updatedCustomer.customerId ? updatedCustomer : c
+            ));
+            setSelectedCustomer(updatedCustomer);
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -479,12 +620,6 @@ const CompanySettingsForm = () => {
       defaultPaymentDays: 30,
       installmentOptions: [2, 3, 6, 12],
       earlyPaymentDiscount: 5
-    },
-    aiWorkflowConfig: {
-      autoApprovalThreshold: 10000,
-      feasibilityScoreMinimum: 7.0,
-      maxIterations: 3,
-      requireCashflowAnalysis: true
     }
   });
 
@@ -535,8 +670,8 @@ const CompanySettingsForm = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-lg font-medium text-gray-900">AI Workflow Configuration</h3>
-          <p className="text-sm text-gray-600">These settings will be used by the AI agent for decision making</p>
+          <h3 className="text-lg font-medium text-gray-900">Company Settings</h3>
+          <p className="text-sm text-gray-600">Configure your company information and pricing parameters</p>
         </div>
         <div className="flex items-center space-x-3">
           {isEditing && hasChanges && (
@@ -764,78 +899,221 @@ const CompanySettingsForm = () => {
           </div>
         </div>
       </div>
+    </div>
+  );
+};
 
-      {/* AI Workflow Configuration */}
-      <div className="bg-white p-6 rounded-lg border">
-        <h4 className="text-lg font-medium text-gray-900 mb-4">AI Workflow Configuration</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Auto-Approval Threshold (MYR)</label>
-            <input
-              type="number"
-              value={settings.aiWorkflowConfig.autoApprovalThreshold}
-              onChange={(e) => updateSetting('aiWorkflowConfig.autoApprovalThreshold', parseInt(e.target.value) || 0)}
-              disabled={!isEditing}
-              className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${!isEditing ? 'bg-gray-50' : 'bg-white'}`}
-            />
-            <p className="text-xs text-gray-500 mt-1">Orders below this amount auto-approve</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Feasibility Score Minimum (1-10)</label>
-            <input
-              type="number"
-              step="0.1"
-              min="1"
-              max="10"
-              value={settings.aiWorkflowConfig.feasibilityScoreMinimum}
-              onChange={(e) => updateSetting('aiWorkflowConfig.feasibilityScoreMinimum', parseFloat(e.target.value) || 7)}
-              disabled={!isEditing}
-              className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${!isEditing ? 'bg-gray-50' : 'bg-white'}`}
-            />
-            <p className="text-xs text-gray-500 mt-1">Minimum score for feature feasibility</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Maximum Iterations</label>
-            <input
-              type="number"
-              min="1"
-              max="10"
-              value={settings.aiWorkflowConfig.maxIterations}
-              onChange={(e) => updateSetting('aiWorkflowConfig.maxIterations', parseInt(e.target.value) || 3)}
-              disabled={!isEditing}
-              className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${!isEditing ? 'bg-gray-50' : 'bg-white'}`}
-            />
-            <p className="text-xs text-gray-500 mt-1">Max workflow iterations before escalation</p>
-          </div>
-          <div className="flex items-center space-x-3">
-            <input
-              type="checkbox"
-              id="requireCashflow"
-              checked={settings.aiWorkflowConfig.requireCashflowAnalysis}
-              onChange={(e) => updateSetting('aiWorkflowConfig.requireCashflowAnalysis', e.target.checked)}
-              disabled={!isEditing}
-              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <label htmlFor="requireCashflow" className="text-sm font-medium text-gray-700">
-              Require Cashflow Analysis
-            </label>
+// Report Modal Component
+const ReportModal = ({ 
+  request, 
+  reportData,
+  onClose 
+}: { 
+  request: ClientRequest; 
+  reportData: ReportData;
+  onClose: () => void; 
+}) => {
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-MY', {
+      style: 'currency',
+      currency: 'MYR'
+    }).format(amount);
+  };
+
+  const formatPercentage = (rate: number) => {
+    return (rate * 100).toFixed(1) + '%';
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">Financial Analysis Report</h2>
+              <p className="text-sm text-gray-500 mt-1">Request ID: {request.request_id}</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         </div>
-      </div>
 
-      {/* Current Configuration Summary */}
-      <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-        <h4 className="text-lg font-medium text-blue-900 mb-4">Current AI Configuration Summary</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div>
-            <p className="text-blue-800"><span className="font-medium">Company:</span> {settings.companyName}</p>
-            <p className="text-blue-800"><span className="font-medium">Min Revenue:</span> {new Intl.NumberFormat('en-MY', { style: 'currency', currency: settings.baseCurrency }).format(settings.minimumRevenue)}</p>
-            <p className="text-blue-800"><span className="font-medium">Base Feature Price:</span> {new Intl.NumberFormat('en-MY', { style: 'currency', currency: settings.baseCurrency }).format(settings.featurePricing.basePrice)}</p>
+        <div className="p-6 space-y-6">
+          {/* Status */}
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <span className="text-green-800 font-medium">Status: {reportData.body.status}</span>
+            </div>
           </div>
+
+          {/* Client Information */}
           <div>
-            <p className="text-blue-800"><span className="font-medium">Auto-Approval:</span> {new Intl.NumberFormat('en-MY', { style: 'currency', currency: settings.baseCurrency }).format(settings.aiWorkflowConfig.autoApprovalThreshold)}</p>
-            <p className="text-blue-800"><span className="font-medium">Feasibility Minimum:</span> {settings.aiWorkflowConfig.feasibilityScoreMinimum}/10</p>
-            <p className="text-blue-800"><span className="font-medium">Cashflow Analysis:</span> {settings.aiWorkflowConfig.requireCashflowAnalysis ? 'Required' : 'Optional'}</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Client Information</h3>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Client Name</label>
+                  <p className="text-sm text-gray-900">{request.full_name}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Company</label>
+                  <p className="text-sm text-gray-900">{request.company || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Project Title</label>
+                  <p className="text-sm text-gray-900">{request.project_title}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Budget</label>
+                  <p className="text-sm text-gray-900">{request.budget || 'TBD'}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Financial Analysis Inputs */}
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Analysis Inputs</h3>
+            <div className="bg-blue-50 rounded-lg p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-blue-700">Current Payment</label>
+                  <p className="text-sm text-blue-900 font-medium">
+                    {formatCurrency(reportData.body.report_data.inputs.current_payment_MYR)}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-blue-700">Current Frequency</label>
+                  <p className="text-sm text-blue-900 font-medium capitalize">
+                    {reportData.body.report_data.inputs.current_frequency}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-blue-700">New Frequency</label>
+                  <p className="text-sm text-blue-900 font-medium capitalize">
+                    {reportData.body.report_data.inputs.new_frequency}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-blue-700">Remaining Years</label>
+                  <p className="text-sm text-blue-900 font-medium">
+                    {reportData.body.report_data.inputs.remaining_years} years
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Calculation Results */}
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Calculation Results</h3>
+            <div className="bg-green-50 rounded-lg p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-green-700">Original Present Value</label>
+                  <p className="text-lg text-green-900 font-bold">
+                    {formatCurrency(reportData.body.report_data.calculation_results.original_present_value_MYR)}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-green-700">New Equivalent Payment</label>
+                  <p className="text-lg text-green-900 font-bold">
+                    {formatCurrency(reportData.body.report_data.calculation_results.new_equivalent_payment_MYR)}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Savings Calculation */}
+              <div className="mt-4 pt-4 border-t border-green-200">
+                <div className="bg-green-100 rounded-lg p-3">
+                  <label className="block text-sm font-medium text-green-700">Potential Savings</label>
+                  <p className="text-xl text-green-900 font-bold">
+                    {formatCurrency(
+                      reportData.body.report_data.calculation_results.original_present_value_MYR - 
+                      reportData.body.report_data.calculation_results.new_equivalent_payment_MYR
+                    )}
+                  </p>
+                  <p className="text-sm text-green-700">
+                    ({((reportData.body.report_data.calculation_results.original_present_value_MYR - 
+                        reportData.body.report_data.calculation_results.new_equivalent_payment_MYR) / 
+                        reportData.body.report_data.calculation_results.original_present_value_MYR * 100).toFixed(1)}% savings)
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Economic Assumptions */}
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Economic Assumptions</h3>
+            <div className="bg-yellow-50 rounded-lg p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-yellow-700">Inflation Rate</label>
+                  <p className="text-sm text-yellow-900 font-medium">
+                    {formatPercentage(reportData.body.report_data.economic_assumptions.inflation_rate)}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-yellow-700">Risk-Free Rate</label>
+                  <p className="text-sm text-yellow-900 font-medium">
+                    {formatPercentage(reportData.body.report_data.economic_assumptions.risk_free_rate)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* S3 Location */}
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Report Storage</h3>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">S3 Location</label>
+              <code className="text-xs text-gray-600 bg-white p-2 rounded border block">
+                {reportData.body.s3_location}
+              </code>
+            </div>
+          </div>
+
+          {/* AI Summary if available */}
+          {request.executive_summary && (
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">AI Analysis Summary</h3>
+              <div className="bg-purple-50 rounded-lg p-4">
+                <p className="text-sm text-purple-900 leading-relaxed">
+                  {request.executive_summary}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        <div className="p-6 border-t border-gray-200 bg-gray-50">
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Close
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
+              Print Report
+            </button>
           </div>
         </div>
       </div>
