@@ -84,6 +84,7 @@ const RequestDetailContent = () => {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('overview');
   const [requestData, setRequestData] = useState<SubmittedRequest | null>(null);
+  const [isApproved, setIsApproved] = useState(false);
   
   const requestId = searchParams.get('id');
 
@@ -469,29 +470,59 @@ const RequestDetailContent = () => {
 
                 {/* Approval Actions */}
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                  <h5 className="font-semibold text-gray-900 mb-4">Your Decision Required</h5>
-                  <p className="text-sm text-gray-600 mb-6">
-                    Please review the above details carefully. By approving, you agree to proceed with the project under the specified terms and conditions.
-                  </p>
-                  
-                  <div className="flex space-x-4">
-                    <button
-                      onClick={() => setActiveTab('invoices')}
-                      className="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                    >
-                      ✓ Approve & Proceed to Payment
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm('Are you sure you want to reject this proposal? This action cannot be undone.')) {
-                          alert('Proposal rejected. Our team will be notified and will contact you shortly.');
-                        }
-                      }}
-                      className="flex-1 bg-red-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-                    >
-                      ✗ Reject Proposal
-                    </button>
-                  </div>
+                  {!isApproved ? (
+                    <>
+                      <h5 className="font-semibold text-gray-900 mb-4">Your Decision Required</h5>
+                      <p className="text-sm text-gray-600 mb-6">
+                        Please review the above details carefully. By approving, you agree to proceed with the project under the specified terms and conditions.
+                      </p>
+                      
+                      <div className="flex space-x-4">
+                        <button
+                          onClick={() => {
+                            setIsApproved(true);
+                            setActiveTab('invoices');
+                          }}
+                          className="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                        >
+                          ✓ Approve & Proceed to Payment
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm('Are you sure you want to reject this proposal? This action cannot be undone.')) {
+                              alert('Proposal rejected. Our team will be notified and will contact you shortly.');
+                            }
+                          }}
+                          className="flex-1 bg-red-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                        >
+                          ✗ Reject Proposal
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-4">
+                      <div className="flex items-center justify-center mb-4">
+                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      </div>
+                      <h5 className="text-xl font-semibold text-green-900 mb-2">Plan is Activated</h5>
+                      <p className="text-sm text-green-700 mb-4">
+                        Your proposal has been approved and your plan is now activated. Please proceed to the invoice tab to complete your payment.
+                      </p>
+                      <button
+                        onClick={() => setActiveTab('invoices')}
+                        className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        View Invoice & Pay
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -530,15 +561,38 @@ const RequestDetailContent = () => {
 
         {activeTab === 'invoices' && (
           <div className="bg-white rounded-lg p-8 shadow-sm border">
-            {/* Invoice Header */}
-            <div className="flex justify-between items-start mb-12">
-              <div>
-                <h1 className="text-4xl font-light text-gray-600 tracking-wide mb-8">INVOICE</h1>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-gray-900">ISSUED TO:</p>
-                  <p className="text-gray-900">Enterprise Customer</p>
-                  <p className="text-gray-600">Customer Company</p>
-                  <p className="text-gray-600">123 Anywhere St., Any City</p>
+            {!isApproved ? (
+              <div className="text-center py-16">
+                <div className="w-20 h-20 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+                  <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-4a2 2 0 00-2-2H6a2 2 0 00-2 2v4a2 2 0 002 2zM9 10V6a3 3 0 116 0v4M9 10h6" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-medium text-gray-900 mb-3">Invoice Not Available</h3>
+                <p className="text-gray-600 mb-6">
+                  Please approve the proposal in the Approval tab first to view your invoice.
+                </p>
+                <button
+                  onClick={() => setActiveTab('approval')}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  Go to Approval Tab
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Invoice Header */}
+                <div className="flex justify-between items-start mb-12">
+                  <div>
+                    <h1 className="text-4xl font-light text-gray-600 tracking-wide mb-8">INVOICE</h1>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-gray-900">ISSUED TO:</p>
+                      <p className="text-gray-900">Enterprise Customer</p>
+                      <p className="text-gray-600">Customer Company</p>
+                      <p className="text-gray-600">123 Anywhere St., Any City</p>
                 </div>
               </div>
               <div className="text-right">
@@ -690,6 +744,8 @@ const RequestDetailContent = () => {
                 <p>• All prices are in Malaysian Ringgit (RM) and inclusive of 6% SST</p>
               </div>
             </div>
+            </>
+            )}
           </div>
         )}
       </div>
