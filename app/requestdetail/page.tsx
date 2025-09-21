@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '../components/Navbar';
 
@@ -80,7 +80,7 @@ const WorkflowProgress = () => {
   );
 };
 
-const RequestDetail = () => {
+const RequestDetailContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('overview');
@@ -292,6 +292,23 @@ const RequestDetail = () => {
         )}
       </div>
     </div>
+  );
+};
+
+const RequestDetail = () => {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="text-center">
+            <p className="text-gray-600">Loading request details...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <RequestDetailContent />
+    </Suspense>
   );
 };
 
