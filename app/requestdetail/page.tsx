@@ -164,6 +164,16 @@ const RequestDetailContent = () => {
               Request Overview
             </button>
             <button
+              onClick={() => setActiveTab('status')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'status'
+                  ? 'border-purple-500 text-purple-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Status
+            </button>
+            <button
               onClick={() => setActiveTab('approval')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'approval'
@@ -171,7 +181,7 @@ const RequestDetailContent = () => {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              Status
+              Approval
             </button>
             <button
               onClick={() => setActiveTab('invoices')}
@@ -277,9 +287,9 @@ const RequestDetailContent = () => {
           </div>
         )}
 
-        {activeTab === 'approval' && (
+        {activeTab === 'status' && (
           <div className="bg-white rounded-lg p-6 shadow-sm border">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Approval Status</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">Request Status</h3>
             
             <div className="space-y-6">
               {/* Current Status */}
@@ -297,7 +307,7 @@ const RequestDetailContent = () => {
 
               {/* Approval Steps */}
               <div className="space-y-4">
-                <h4 className="font-medium text-gray-900">Approval Process</h4>
+                <h4 className="font-medium text-gray-900">Process Status</h4>
                 
                 <div className="space-y-3">
                   <div className="flex items-start space-x-3 p-3 bg-green-50 border border-green-200 rounded-lg">
@@ -361,10 +371,44 @@ const RequestDetailContent = () => {
                 </div>
               </div>
 
-              {/* Detailed Approval Information */}
-              <div className="space-y-6">
-                <h4 className="font-medium text-gray-900">Approval Details</h4>
-                
+              {/* Estimated Timeline */}
+              <div className="border-t border-gray-200 pt-6">
+                <h4 className="font-medium text-gray-900 mb-3">Estimated Timeline</h4>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <svg className="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-sm text-yellow-800">
+                      <strong>Expected completion:</strong> {requestData.expectedTimeline} from approval
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Information */}
+              <div className="border-t border-gray-200 pt-6">
+                <h4 className="font-medium text-gray-900 mb-3">Need Help?</h4>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <p className="text-sm text-gray-600 mb-2">
+                    If you have questions about the status or need to modify your request:
+                  </p>
+                  <div className="text-sm text-gray-700">
+                    <p>📧 Email: support@accelereal.com</p>
+                    <p>📞 Phone: +60 12-345-6789</p>
+                    <p>💬 Live Chat: Available 9 AM - 6 PM MYT</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'approval' && (
+          <div className="bg-white rounded-lg p-6 shadow-sm border">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">Approval Details</h3>
+            
+            <div className="space-y-6">
                 {/* Client Information */}
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <h5 className="font-semibold text-gray-900 mb-4">Client Information</h5>
@@ -525,42 +569,11 @@ const RequestDetailContent = () => {
                   )}
                 </div>
               </div>
-
-              {/* Estimated Timeline */}
-              <div className="border-t border-gray-200 pt-6">
-                <h4 className="font-medium text-gray-900 mb-3">Estimated Timeline</h4>
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <div className="flex items-center">
-                    <svg className="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-sm text-yellow-800">
-                      <strong>Expected completion:</strong> {requestData.expectedTimeline} from approval
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Contact Information */}
-              <div className="border-t border-gray-200 pt-6">
-                <h4 className="font-medium text-gray-900 mb-3">Need Help?</h4>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600 mb-2">
-                    If you have questions about the approval process or need to modify your request:
-                  </p>
-                  <div className="text-sm text-gray-700">
-                    <p>📧 Email: support@accelereal.com</p>
-                    <p>📞 Phone: +60 12-345-6789</p>
-                    <p>💬 Live Chat: Available 9 AM - 6 PM MYT</p>
-                  </div>
-                </div>
-              </div>
             </div>
-          </div>
         )}
 
         {activeTab === 'invoices' && (
-          <div className="bg-white rounded-lg p-8 shadow-sm border">
+          <div className="bg-white rounded-lg p-8 shadow-sm border" data-invoice-content>
             {!isApproved ? (
               <div className="text-center py-16">
                 <div className="w-20 h-20 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
@@ -715,11 +728,12 @@ const RequestDetailContent = () => {
                 onClick={() => {
                   const printWindow = window.open('', '_blank');
                   if (printWindow) {
+                    const invoiceContent = document.querySelector('[data-invoice-content]');
                     printWindow.document.write(`
                       <html>
                         <head><title>Invoice #01234</title></head>
                         <body style="font-family: Arial, sans-serif; margin: 40px;">
-                          ${document.querySelector('[data-invoice-content]')?.innerHTML || 'Invoice content'}
+                          ${invoiceContent ? invoiceContent.innerHTML : 'Invoice content'}
                         </body>
                       </html>
                     `);
