@@ -29,7 +29,7 @@ interface ClientRequest {
   description: string;
   timeline: string;
   budget: string;
-  status: 'pending' | 'accepted' | 'rejected';
+  status: 'pending' | 'accepted' | 'rejected' | 'submitted'; // submitted is legacy, will be treated as pending
   priority: string;
   created_at: string;
   executive_summary?: string;
@@ -213,6 +213,7 @@ const AdminDashboard = () => {
       case 'accepted':
         return 'bg-green-100 text-green-800';
       case 'rejected':
+      case 'submitted': // Legacy support - treat as rejected
         return 'bg-red-100 text-red-800';
       case 'overdue':
         return 'bg-red-100 text-red-800';
@@ -232,6 +233,7 @@ const AdminDashboard = () => {
       case 'accepted':
         return 'Accepted';
       case 'rejected':
+      case 'submitted': // Legacy support - show as rejected
         return 'Rejected';
       case 'overdue':
         return 'Overdue';
@@ -497,7 +499,7 @@ const AdminDashboard = () => {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(request.status)}`}>
-                                {request.status}
+                                {getStatusDisplayName(request.status)}
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -574,8 +576,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Company Settings Form */}
-      <CompanySettingsForm />
+      
 
       {/* Customer Modal */}
       {showCustomerModal && selectedCustomer && (

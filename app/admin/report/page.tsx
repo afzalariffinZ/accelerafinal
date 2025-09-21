@@ -36,7 +36,7 @@ interface ClientRequest {
   description: string;
   timeline: string;
   budget: string;
-  status: 'pending' | 'accepted' | 'rejected';
+  status: 'pending' | 'accepted' | 'rejected' | 'submitted'; // submitted is legacy, will be treated as pending
   priority: string;
   created_at: string;
 }
@@ -148,6 +148,7 @@ const ReportPageContent = () => {
       case 'accepted':
         return 'bg-green-100 text-green-800';
       case 'pending':
+      case 'submitted': // Legacy support - treat as pending
         return 'bg-yellow-100 text-yellow-800';
       case 'rejected':
         return 'bg-red-100 text-red-800';
@@ -433,7 +434,7 @@ const ReportPageContent = () => {
         </div>
 
         {/* Action Buttons */}
-        {request.status === 'pending' && (
+        {(request.status === 'pending' || request.status === 'submitted') && (
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Review Decision</h2>
             <p className="text-gray-600 mb-6">
@@ -472,7 +473,7 @@ const ReportPageContent = () => {
           </div>
         )}
 
-        {request.status !== 'pending' && (
+        {request.status !== 'pending' && request.status !== 'submitted' && (
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <div className="text-center">
               <div className={`inline-flex px-4 py-2 text-lg font-semibold rounded-full ${getStatusColor(request.status)}`}>
