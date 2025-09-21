@@ -92,7 +92,7 @@ const AdminDashboard = () => {
   const router = useRouter();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [clientRequests, setClientRequests] = useState<ClientRequest[]>([]);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('customers');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showCustomerModal, setShowCustomerModal] = useState(false);
 
@@ -302,16 +302,6 @@ const AdminDashboard = () => {
         {/* Tab Navigation */}
         <div className="bg-white rounded-lg shadow-sm border mb-6">
           <div className="flex border-b border-gray-200">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'overview'
-                  ? 'border-blue-500 text-blue-600 bg-blue-50'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Overview
-            </button>
             <button
               onClick={() => setActiveTab('customers')}
               className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
@@ -538,27 +528,184 @@ const AdminDashboard = () => {
               </div>
             )}
 
-            {activeTab === 'overview' && (
-              <div className="text-center py-16">
-                <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
-                  <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-medium text-gray-900 mb-2">Overview Dashboard</h3>
-                <p className="text-gray-600">Analytics and overview metrics coming soon</p>
-              </div>
-            )}
-
             {activeTab === 'analytics' && (
-              <div className="text-center py-16">
-                <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
-                  <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
+              <div className="space-y-6">
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">SaaS Founder Analytics</h2>
+                  <p className="text-gray-600">Key metrics and insights for your business performance</p>
                 </div>
-                <h3 className="text-xl font-medium text-gray-900 mb-2">Analytics</h3>
-                <p className="text-gray-600">Advanced analytics and reporting coming soon</p>
+
+                {/* Key Metrics Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-6">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-green-500 rounded-lg">
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                        </svg>
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm text-green-600 font-medium">Total Revenue</p>
+                        <p className="text-2xl font-bold text-green-900">$24,650</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-6">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-blue-500 rounded-lg">
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm text-blue-600 font-medium">Outstanding Receivables</p>
+                        <p className="text-2xl font-bold text-blue-900">$8,420</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-6">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-purple-500 rounded-lg">
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                        </svg>
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm text-purple-600 font-medium">Monthly Projection</p>
+                        <p className="text-2xl font-bold text-purple-900">$12,300</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-lg p-6">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-orange-500 rounded-lg">
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm text-orange-600 font-medium">Active Clients</p>
+                        <p className="text-2xl font-bold text-orange-900">{customers.length}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Charts Row */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Revenue Trend Chart */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Trend (Last 6 Months)</h3>
+                    <div className="h-64 bg-gray-50 rounded-lg flex items-end justify-between p-4 space-x-2">
+                      <div className="flex flex-col items-center">
+                        <div className="w-8 bg-blue-500 rounded-t" style={{height: '60px'}}></div>
+                        <span className="text-xs text-gray-600 mt-2">Jan</span>
+                        <span className="text-xs font-medium">$3.2k</span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <div className="w-8 bg-blue-500 rounded-t" style={{height: '80px'}}></div>
+                        <span className="text-xs text-gray-600 mt-2">Feb</span>
+                        <span className="text-xs font-medium">$4.1k</span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <div className="w-8 bg-blue-500 rounded-t" style={{height: '45px'}}></div>
+                        <span className="text-xs text-gray-600 mt-2">Mar</span>
+                        <span className="text-xs font-medium">$2.8k</span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <div className="w-8 bg-blue-500 rounded-t" style={{height: '120px'}}></div>
+                        <span className="text-xs text-gray-600 mt-2">Apr</span>
+                        <span className="text-xs font-medium">$6.2k</span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <div className="w-8 bg-blue-500 rounded-t" style={{height: '95px'}}></div>
+                        <span className="text-xs text-gray-600 mt-2">May</span>
+                        <span className="text-xs font-medium">$4.9k</span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <div className="w-8 bg-blue-500 rounded-t" style={{height: '140px'}}></div>
+                        <span className="text-xs text-gray-600 mt-2">Jun</span>
+                        <span className="text-xs font-medium">$7.1k</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Request Status Distribution */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Request Status Distribution</h3>
+                    <div className="h-64 flex items-center justify-center">
+                      <div className="relative w-48 h-48">
+                        {/* Donut Chart Simulation */}
+                        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                          <circle cx="50" cy="50" r="40" fill="none" stroke="#e5e7eb" strokeWidth="20"/>
+                          <circle cx="50" cy="50" r="40" fill="none" stroke="#10b981" strokeWidth="20"
+                                  strokeDasharray={`${(clientRequests.filter(r => getStatusDisplayName(r.status) === 'Accepted').length / clientRequests.length) * 251.2} 251.2`}
+                                  strokeDashoffset="0"/>
+                          <circle cx="50" cy="50" r="40" fill="none" stroke="#f59e0b" strokeWidth="20"
+                                  strokeDasharray={`${(clientRequests.filter(r => getStatusDisplayName(r.status) === 'Pending').length / clientRequests.length) * 251.2} 251.2`}
+                                  strokeDashoffset={`-${(clientRequests.filter(r => getStatusDisplayName(r.status) === 'Accepted').length / clientRequests.length) * 251.2}`}/>
+                          <circle cx="50" cy="50" r="40" fill="none" stroke="#ef4444" strokeWidth="20"
+                                  strokeDasharray={`${(clientRequests.filter(r => getStatusDisplayName(r.status) === 'Rejected').length / clientRequests.length) * 251.2} 251.2`}
+                                  strokeDashoffset={`-${((clientRequests.filter(r => getStatusDisplayName(r.status) === 'Accepted').length + clientRequests.filter(r => getStatusDisplayName(r.status) === 'Pending').length) / clientRequests.length) * 251.2}`}/>
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-gray-900">{clientRequests.length}</div>
+                            <div className="text-sm text-gray-600">Total</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                          <span className="text-sm text-gray-600">Accepted</span>
+                        </div>
+                        <span className="text-sm font-medium">{clientRequests.filter(r => getStatusDisplayName(r.status) === 'Accepted').length}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                          <span className="text-sm text-gray-600">Pending</span>
+                        </div>
+                        <span className="text-sm font-medium">{clientRequests.filter(r => getStatusDisplayName(r.status) === 'Pending').length}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                          <span className="text-sm text-gray-600">Rejected</span>
+                        </div>
+                        <span className="text-sm font-medium">{clientRequests.filter(r => getStatusDisplayName(r.status) === 'Rejected').length}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Business Insights */}
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Business Insights</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                      <div className="text-2xl font-bold text-green-600">85%</div>
+                      <div className="text-sm text-gray-600">Acceptance Rate</div>
+                      <div className="text-xs text-gray-500 mt-1">↑ 12% from last month</div>
+                    </div>
+                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-600">3.2 days</div>
+                      <div className="text-sm text-gray-600">Avg Response Time</div>
+                      <div className="text-xs text-gray-500 mt-1">↓ 0.8 days improvement</div>
+                    </div>
+                    <div className="text-center p-4 bg-purple-50 rounded-lg">
+                      <div className="text-2xl font-bold text-purple-600">$2,850</div>
+                      <div className="text-sm text-gray-600">Avg Deal Value</div>
+                      <div className="text-xs text-gray-500 mt-1">↑ $320 from last month</div>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
