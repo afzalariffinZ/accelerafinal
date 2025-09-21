@@ -32,6 +32,7 @@ interface ClientRequest {
   status: 'pending' | 'accepted' | 'rejected' | 'submitted'; // submitted is legacy, will be treated as pending
   priority: string;
   created_at: string;
+  s3_report_location?: string; // S3 path to the generated report
   executive_summary?: string;
   technical_analysis?: string;
   implementation_strategy?: string;
@@ -95,6 +96,7 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('customers');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showCustomerModal, setShowCustomerModal] = useState(false);
+  const [lastUpdateTime, setLastUpdateTime] = useState<string>('');
 
   useEffect(() => {
     // Load dummy customer data
@@ -183,7 +185,29 @@ const AdminDashboard = () => {
     
     // Fetch client requests from API
     fetchClientRequests();
-  }, []);
+
+    // Auto-refresh every 30 seconds when on requests tab
+    const intervalId = setInterval(() => {
+      if (activeTab === 'requests') {
+        fetchClientRequests();
+      }
+    }, 30000);
+
+    // Refresh when window gains focus (e.g., coming back from report page)
+    const handleFocus = () => {
+      if (activeTab === 'requests') {
+        fetchClientRequests();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    // Cleanup
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [activeTab]);
 
   const fetchClientRequests = async () => {
     try {
@@ -191,7 +215,14 @@ const AdminDashboard = () => {
       const result = await response.json();
       
       if (result.success) {
-        setClientRequests(result.data);
+        // For each request, check if it has an S3 report available
+        const requestsWithReportStatus = result.data.map((request: ClientRequest) => ({
+          ...request,
+          hasReport: Boolean(request.s3_report_location)
+        }));
+        
+        setClientRequests(requestsWithReportStatus);
+        setLastUpdateTime(new Date().toLocaleTimeString());
       }
     } catch (error) {
       console.error('Error fetching client requests:', error);
@@ -285,11 +316,7 @@ const AdminDashboard = () => {
             <p className="text-gray-600">Monitor customer performance and manage accounts</p>
           </div>
           <div className="flex items-center space-x-4">
-            <select className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option>Monthly</option>
-              <option>Quarterly</option>
-              <option>Yearly</option>
-            </select>
+           
             <button className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center gap-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -441,6 +468,11 @@ const AdminDashboard = () => {
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-semibold text-gray-900">Client Requests</h2>
                   <div className="flex items-center space-x-4">
+                    {lastUpdateTime && (
+                      <span className="text-sm text-gray-500">
+                        Last updated: {lastUpdateTime}
+                      </span>
+                    )}
                     <button
                       onClick={fetchClientRequests}
                       className="text-gray-500 hover:text-gray-700 transition-colors flex items-center gap-2"
@@ -488,9 +520,19 @@ const AdminDashboard = () => {
                               <div className="text-sm text-gray-500 truncate max-w-xs">{request.description}</div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(request.status)}`}>
-                                {getStatusDisplayName(request.status)}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(request.status)}`}>
+                                  {getStatusDisplayName(request.status)}
+                                </span>
+                                {request.s3_report_location && (
+                                  <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    Report Available
+                                  </span>
+                                )}
+                              </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {request.budget || 'TBD'}
@@ -501,7 +543,12 @@ const AdminDashboard = () => {
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                               <button
                                 onClick={() => handleViewReport(request)}
-                                className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
+                                className={`flex items-center gap-1 ${
+                                  request.s3_report_location 
+                                    ? 'text-blue-600 hover:text-blue-900' 
+                                    : 'text-gray-600 hover:text-gray-800'
+                                }`}
+                                title={request.s3_report_location ? 'View report with real data from S3' : 'View report (will show mock data)'}
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />

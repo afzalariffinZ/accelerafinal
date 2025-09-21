@@ -5,8 +5,24 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense } from 'react';
 
 interface ReportData {
-  status: string;
-  report_data: {
+  status?: string;
+  // Direct S3 structure (flat)
+  inputs?: {
+    current_payment_MYR: number;
+    current_frequency: string;
+    new_frequency: string;
+    remaining_years: number;
+  };
+  calculation_results?: {
+    original_present_value_MYR: number;
+    new_equivalent_payment_MYR: number;
+  };
+  economic_assumptions?: {
+    inflation_rate: number;
+    risk_free_rate: number;
+  };
+  // Nested structure (mock data)
+  report_data?: {
     inputs: {
       current_payment_MYR: number;
       current_frequency: string;
@@ -22,7 +38,7 @@ interface ReportData {
       risk_free_rate: number;
     };
   };
-  s3_location: string;
+  s3_location?: string;
 }
 
 interface ClientRequest {
@@ -63,37 +79,83 @@ const ReportPageContent = () => {
       const result = await response.json();
       
       if (result.success && result.data.length > 0) {
-        setRequest(result.data[0]);
+        const requestData = result.data[0];
+        setRequest(requestData);
         
-        // Generate mock report data based on the provided JSON structure
-        const mockReportData: ReportData = {
-          status: "Success",
-          report_data: {
-            inputs: {
-              current_payment_MYR: 1000,
-              current_frequency: "monthly",
-              new_frequency: "quarterly",
-              remaining_years: 5
-            },
-            calculation_results: {
-              original_present_value_MYR: 12100,
-              new_equivalent_payment_MYR: 11900
-            },
-            economic_assumptions: {
-              inflation_rate: 0.032,
-              risk_free_rate: 0.035
+        // Try to fetch real report data from S3 if available
+        if (requestData.s3_report_location) {
+          try {
+            const reportResponse = await fetch('/api/reports/s3', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                s3Location: requestData.s3_report_location
+              }),
+            });
+            
+            const reportResult = await reportResponse.json();
+            
+            if (reportResult.success) {
+              setReportData(reportResult.data);
+            } else {
+              console.error('Error fetching report from S3:', reportResult.error);
+              // Fall back to mock data if S3 fetch fails
+              setReportData(generateMockReportData());
             }
-          },
-          s3_location: "s3://client-data-hfh/llm-generated-reports/report-2025-09-21T13-32-55Z.json"
-        };
-        
-        setReportData(mockReportData);
+          } catch (s3Error) {
+            console.error('Error fetching report from S3:', s3Error);
+            // Fall back to mock data if S3 fetch fails
+            setReportData(generateMockReportData());
+          }
+        } else {
+          // No S3 location available, use mock data
+          console.log('No S3 location found, using mock data');
+          setReportData(generateMockReportData());
+        }
       }
     } catch (error) {
       console.error('Error fetching request data:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const generateMockReportData = (): ReportData => {
+    return {
+      status: "Success",
+      report_data: {
+        inputs: {
+          current_payment_MYR: 1000,
+          current_frequency: "monthly",
+          new_frequency: "quarterly",
+          remaining_years: 5
+        },
+        calculation_results: {
+          original_present_value_MYR: 12100,
+          new_equivalent_payment_MYR: 11900
+        },
+        economic_assumptions: {
+          inflation_rate: 0.032,
+          risk_free_rate: 0.035
+        }
+      },
+      s3_location: "s3://client-data-hfh/llm-generated-reports/report-2025-09-21T13-32-55Z.json"
+    };
+  };
+
+  // Helper functions to get data from either structure
+  const getInputs = (data: ReportData) => {
+    return data.inputs || data.report_data?.inputs;
+  };
+
+  const getCalculationResults = (data: ReportData) => {
+    return data.calculation_results || data.report_data?.calculation_results;
+  };
+
+  const getEconomicAssumptions = (data: ReportData) => {
+    return data.economic_assumptions || data.report_data?.economic_assumptions;
   };
 
   const updateRequestStatus = async (newStatus: 'accepted' | 'rejected') => {
@@ -250,25 +312,25 @@ const ReportPageContent = () => {
               <div className="bg-blue-50 rounded-lg p-4">
                 <label className="block text-sm font-medium text-blue-700 mb-1">Current Payment</label>
                 <p className="text-lg text-blue-900 font-semibold">
-                  {formatCurrency(reportData.report_data.inputs.current_payment_MYR)}
+                  {formatCurrency(getInputs(reportData)?.current_payment_MYR || 0)}
                 </p>
               </div>
               <div className="bg-blue-50 rounded-lg p-4">
                 <label className="block text-sm font-medium text-blue-700 mb-1">Current Frequency</label>
                 <p className="text-lg text-blue-900 font-semibold capitalize">
-                  {reportData.report_data.inputs.current_frequency}
+                  {getInputs(reportData)?.current_frequency}
                 </p>
               </div>
               <div className="bg-blue-50 rounded-lg p-4">
                 <label className="block text-sm font-medium text-blue-700 mb-1">New Frequency</label>
                 <p className="text-lg text-blue-900 font-semibold capitalize">
-                  {reportData.report_data.inputs.new_frequency}
+                  {getInputs(reportData)?.new_frequency}
                 </p>
               </div>
               <div className="bg-blue-50 rounded-lg p-4">
                 <label className="block text-sm font-medium text-blue-700 mb-1">Remaining Years</label>
                 <p className="text-lg text-blue-900 font-semibold">
-                  {reportData.report_data.inputs.remaining_years} years
+                  {getInputs(reportData)?.remaining_years} years
                 </p>
               </div>
             </div>
@@ -281,13 +343,13 @@ const ReportPageContent = () => {
               <div className="bg-green-50 rounded-lg p-4">
                 <label className="block text-sm font-medium text-green-700 mb-1">Original Present Value</label>
                 <p className="text-2xl text-green-900 font-bold">
-                  {formatCurrency(reportData.report_data.calculation_results.original_present_value_MYR)}
+                  {formatCurrency(getCalculationResults(reportData)?.original_present_value_MYR || 0)}
                 </p>
               </div>
               <div className="bg-green-50 rounded-lg p-4">
                 <label className="block text-sm font-medium text-green-700 mb-1">New Equivalent Payment</label>
                 <p className="text-2xl text-green-900 font-bold">
-                  {formatCurrency(reportData.report_data.calculation_results.new_equivalent_payment_MYR)}
+                  {formatCurrency(getCalculationResults(reportData)?.new_equivalent_payment_MYR || 0)}
                 </p>
               </div>
               
@@ -296,14 +358,14 @@ const ReportPageContent = () => {
                 <label className="block text-sm font-medium text-green-700 mb-1">Potential Savings</label>
                 <p className="text-3xl text-green-900 font-bold">
                   {formatCurrency(
-                    reportData.report_data.calculation_results.original_present_value_MYR - 
-                    reportData.report_data.calculation_results.new_equivalent_payment_MYR
+                    (getCalculationResults(reportData)?.original_present_value_MYR || 0) - 
+                    (getCalculationResults(reportData)?.new_equivalent_payment_MYR || 0)
                   )}
                 </p>
                 <p className="text-sm text-green-700 mt-1">
-                  ({((reportData.report_data.calculation_results.original_present_value_MYR - 
-                      reportData.report_data.calculation_results.new_equivalent_payment_MYR) / 
-                      reportData.report_data.calculation_results.original_present_value_MYR * 100).toFixed(1)}% savings)
+                  ({((((getCalculationResults(reportData)?.original_present_value_MYR || 0) - 
+                      (getCalculationResults(reportData)?.new_equivalent_payment_MYR || 0)) / 
+                      (getCalculationResults(reportData)?.original_present_value_MYR || 1)) * 100).toFixed(1)}% savings)
                 </p>
               </div>
             </div>
@@ -317,13 +379,13 @@ const ReportPageContent = () => {
             <div className="bg-yellow-50 rounded-lg p-4">
               <label className="block text-sm font-medium text-yellow-700 mb-1">Inflation Rate</label>
               <p className="text-lg text-yellow-900 font-semibold">
-                {formatPercentage(reportData.report_data.economic_assumptions.inflation_rate)}
+                {formatPercentage(getEconomicAssumptions(reportData)?.inflation_rate || 0)}
               </p>
             </div>
             <div className="bg-yellow-50 rounded-lg p-4">
               <label className="block text-sm font-medium text-yellow-700 mb-1">Risk-Free Rate</label>
               <p className="text-lg text-yellow-900 font-semibold">
-                {formatPercentage(reportData.report_data.economic_assumptions.risk_free_rate)}
+                {formatPercentage(getEconomicAssumptions(reportData)?.risk_free_rate || 0)}
               </p>
             </div>
           </div>

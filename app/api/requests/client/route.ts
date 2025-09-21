@@ -149,12 +149,19 @@ export async function PATCH(request: NextRequest) {
         // Check if this is a status-only update
         if (body.status && !body.aiSummary) {
             // Status update only
+            const updateData: any = {
+                status: body.status,
+                updated_at: new Date().toISOString()
+            };
+            
+            // Include S3 location if provided
+            if (body.s3Location) {
+                updateData.s3_report_location = body.s3Location;
+            }
+            
             const { data, error } = await supabase
                 .from('client_requests')
-                .update({
-                    status: body.status,
-                    updated_at: new Date().toISOString()
-                })
+                .update(updateData)
                 .eq('request_id', body.requestId)
                 .select()
 
